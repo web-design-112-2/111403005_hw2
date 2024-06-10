@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>時光之旅-穿越侏儸紀</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+    <link rel="stylesheet" href="style1.css">
+    <!-- AIzaSyCYy_lPcdszHrvaumxdKRUwXEYXm6mhzBc -->
+</head>
+
+<body>
+    <div class="chatContainer">
+        
+        <div class="row msgAndImg">
+            <div class="row col-7 btnAndMsg">
+                <h1>時光之旅</h1>
+                <div id="buttonContainer" class="col-1">
+                    <button id="startButton">Start Game</button>
+                    <button id="restartButton">Restart</button>
+                </div>
+                <div id="messages" class="col-11"></div>
+            </div>
+            <div id="sceneImage" class="col-5"></div>
+        </div>
+        <form id="messageForm">
+            <input type="text" id="messageInput" placeholder="Type your message here..." required>
+            <button id="sendMessageBtn" type="submit">Send</button>
+        </form>
+        
+
+    </div>
+
+    <script>
+        var conversationHistory = [];
+        
+        // 宣告 apiKey 變數並傳入 prompt 得到的值
+        var apiKey = prompt("Please enter your api key.", " ");
+        if (!apiKey) {
+            alert("API key are required to use the chatroom.");
+        } else {
+            document.getElementById('messageForm').addEventListener('submit', function (event) {
+                event.preventDefault();
+                var message = document.getElementById('messageInput').value;
+
+                addToConversationHistory('user', message);
+                displayMessage(message, 'user');
+
+                fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + apiKey, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        "contents": conversationHistory,
+                        "safetySettings": [
+                            {
+                                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                                "threshold": "BLOCK_ONLY_HIGH"
+                            },
+                            {
+                                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                                "threshold": "BLOCK_ONLY_HIGH"
+                            },
+                        ],
+                        "generationConfig": {
+                            "stopSequences": [
+                                ""
+                            ],
+                            "temperature": 1.2,
+                            //  0-2 越低越固定
+                            "maxOutputTokens": 2048,
+                            "topP": 0.8,
+                            // 0-1 越低越固定
+                            "topK": 10
+                        }
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        var responseText = data.candidates[0].content.parts[0].text;
+                        addToConversationHistory('model', responseText);
+                        displayMessage(responseText, 'bot');
+                    })
+                    .catch(error => console.error('Error:', error));
+
+                document.getElementById('messageInput').value = '';
+            });
+        }
+        
+        function addToConversationHistory(role, text) {
+            conversationHistory.push({
+                "role": role,
+                "parts": [{
+                    "text": text
+                }]
+            });
+        }
+
+        function displayMessage(message, sender) {
+            var messageElement = document.createElement('div');
+            var formatMessage = formatText(message);
+            messageElement.innerHTML = formatMessage;
+            // messageElement.textContent =message; 
+            messageElement.classList.add('message');
+            if (sender === 'user') {
+                messageElement.classList.add('userMessage');
+            } else {
+                messageElement.classList.add('botMessage');
+            }
+            document.getElementById('messages').appendChild(messageElement);
+            // Scroll to bottom
+            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+            updateSceneImage(message);
+        }
+
+        // 圖片
+        function updateSceneImage(responseText) {
+            let sceneMatch = responseText.match(/場景：(.*?)\s/); // 使用正則表達式匹配場景描述
+            if (sceneMatch && sceneMatch[1]) {
+                let scene = sceneMatch[1];
+                console.log(scene);
+                // 檢查scene是否包含關鍵字
+                if (scene.includes("叢林")) {
+                    document.getElementById('sceneImage').innerHTML = '<img src="./img/jun1.png" alt="叢林">';
+                } else if (scene.includes("河邊")) {
+                    document.getElementById('sceneImage').innerHTML = '<img src="./img/river1.png" alt="河邊">';
+                } else if (scene.includes("營地")) {
+                    document.getElementById('sceneImage').innerHTML = '<img src="./img/camp1.png" alt="營地">';
+                }
+                else {
+                    // 如果不包含關鍵字，可以在這裡處理其他情況或者不進行任何操作
+                    // 例如清空圖片或顯示預設圖片
+                    document.getElementById('sceneImage').innerHTML = '<img src="./img/froggy.jpg" alt="預設">'; // 清空圖片
+                }
+            }
+        }
+
+        // 腳本
+        document.getElementById('startButton').addEventListener('click', function(){
+            conversationHistory.push({
+                "role": 'user',
+                "parts": [{
+                    "text": `腳本:
+                    """
+                    遊戲標題：穿越侏儸紀
+遊戲背景
+莉亞是一名熱愛古生物學的大學生，在一次科學實驗中意外穿越到了侏儸紀時代，面臨生存挑戰並試圖回到現代。遊戲通過莉亞的選擇和互動來探索勇氣與智慧的重要性。
+
+主要角色：
+莉亞：主角，熱愛冒險的古生物學大學生。
+艾登：侏儸紀時代的獵人，熟悉當地環境。
+瑪雅：另一位穿越到侏儸紀的科學家，冷靜理智。
+遊戲腳本流程
+
+開場：
+（場景：叢林）
+莉亞現代的在實驗中意外啟動了時光機，穿越到侏儸紀時代。
+選擇A：探索周圍環境。
+選擇B：坐在原地。
+
+探索周圍環境：
+（場景：河邊）
+若選擇A，莉亞遇到了一隻食肉恐龍，感到驚慌。
+ 選擇A1：躲進附近的洞穴。 （選擇後進入求生合作劇情）
+ 選擇A2：拔腿狂奔。（選擇後進入求生合作劇情）
+
+坐在原地：
+（場景：叢林）
+若選擇B，一名獵人衣著的男子(艾登)，和一名現代衣著的女子(瑪雅)從遠方走來並發現了莉亞。
+ 選擇B1：向他們解釋自己的處境。（選擇後進入求生合作劇情）
+ 選擇B2：觀察一會兒再行動。（選擇後進入求生合作劇情）
+
+求生合作：
+（場景：營地）
+莉亞與艾登和瑪雅合作尋找回到現代的方法。
+莉亞逐漸對艾登的勇氣和瑪雅的智慧產生敬佩。
+選擇A：分享自己的理論，嘗試修復時光機。（選擇後進入結局，根據玩家的選擇進行反思及回顧）
+選擇B：保留自己的想法，觀察他們的計劃。（選擇後進入結局，根據玩家的選擇進行反思及回顧）
+
+結局：
+開放合作結局：如果莉亞選擇在關鍵時刻分享自己的想法（A1和A），她與艾登和瑪雅的合作將更加默契和成功。艾登和瑪雅對莉亞的勇氣和智慧表示讚賞，最終成功修復時光機並回到現代，建立起深厚的友誼。
+
+壓抑合作結局：如果莉亞選擇壓抑自己的想法（A2和B），她會感到孤立和不被理解。與艾登和瑪雅的關係因缺乏溝通而逐漸疏遠，最終無法成功修復時光機，滯留在侏儸紀時代。
+
+遊戲結尾
+遊戲最後將根據莉亞的選擇提供一段反思，強調在困境中開放合作與交流的重要性，以及這種態度對個人及團隊成功的影響。
+"""
+
+                        請根據腳本中的對話，根據"""開場"""到"""探索周圍環境"""或"""尋找其他穿越者"""最後到"""求生合作"""進行，開始一個文字冒險遊戲，每一次的對話，都必須呈現以下格式與資訊：
+                        <場景>：目前故事的背景為何
+                        <選擇>：在每一次的對話中，你都會根據腳本給我可以選擇的動作，根據我選擇的動作繼續接下來的劇情，整體劇情會圍繞腳本發展。
+
+                        在開場前先解釋主角的處境。
+                        一次只給我一個場景。
+                        選項以"A", "B"顯示
+                        根據我的選擇進行故事就好，不要幫我做出選擇
+                    `
+                }]
+            })
+            fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + apiKey, {
+                method: 'POST',
+                headers:{
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "contents": conversationHistory,
+                    "safetySettings": [
+                        {
+                            "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                            "threshold": "BLOCK_NONE"
+                        }
+                    ]
+                })
+
+            })
+            .then(response => response.json())
+                    .then(data => {
+                        var responseText = data.candidates[0].content.parts[0].text;
+                        addToConversationHistory('model', responseText);
+                        displayMessage(responseText, 'bot');
+                    })
+                    .catch(error => console.error('Error:', error));
+        })
+
+        // 重新開始
+        document.getElementById('restartButton').addEventListener('click', function() {
+            conversationHistory = []; // Clear the conversation history
+            document.getElementById('messages').innerHTML = ''; // Clear the displayed messages
+            document.getElementById('sceneImage').innerHTML = ''; // Clear the scene image
+            alert("遊戲將中止，按下Start按鈕即可開始新遊戲.");
+        });
+
+        // 正則表達式
+        function formatText(text){
+            let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<br><strong>$1<strong>');
+                formattedText = formattedText.replace(/\*(.*?)\s/g, '<br>$1');
+                return formattedText;
+        }
+    </script>
+    <!-- AIzaSyCYy_lPcdszHrvaumxdKRUwXEYXm6mhzBc -->
+</body>
+
+
+</html>
